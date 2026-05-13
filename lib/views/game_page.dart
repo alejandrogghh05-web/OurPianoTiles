@@ -141,7 +141,7 @@ class _HudBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.black54,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.6)),
+        border: Border.all(color: color),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

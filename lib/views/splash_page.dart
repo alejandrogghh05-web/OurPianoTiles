@@ -17,7 +17,7 @@ class SplashPage extends GetView<SplashController> {
             const _PianoIcon(),
             const SizedBox(height: 32),
             const Text(
-              'Piano Tiles',
+              'Music Tiles',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 40,
@@ -27,9 +27,9 @@ class SplashPage extends GetView<SplashController> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Toca el ritmo',
+              'Sigue el ritmo',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.6),
+                color: Colors.white,
                 fontSize: 16,
                 letterSpacing: 2,
               ),

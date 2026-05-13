@@ -14,7 +14,7 @@ class MenuPage extends GetView<SongMenuController> {
         children: [
           // Background
           Image.asset('assets/background.jpg', fit: BoxFit.cover),
-          Container(color: Colors.black.withOpacity(0.7)),
+          Container(color: Colors.black),
 
           SafeArea(
             child: Column(
@@ -34,7 +34,7 @@ class MenuPage extends GetView<SongMenuController> {
                 Text(
                   'Elige una canción',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white,
                     fontSize: 14,
                     letterSpacing: 2,
                   ),
@@ -77,13 +77,13 @@ class _SongCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           color: song.isLocked
-              ? Colors.white.withOpacity(0.05)
-              : Colors.white.withOpacity(0.12),
+              ? Colors.white
+              : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: song.isLocked
                 ? Colors.white24
-                : Colors.white.withOpacity(0.4),
+                : Colors.white,
             width: 1,
           ),
         ),
@@ -126,7 +126,7 @@ class _SongCard extends StatelessWidget {
                       style: TextStyle(
                         color: song.isLocked
                             ? Colors.white24
-                            : Colors.white.withOpacity(0.6),
+                            : Colors.white,
                         fontSize: 13,
                       ),
                     ),
@@ -139,9 +139,7 @@ class _SongCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: _difficultyColor(song.difficulty).withOpacity(
-                    song.isLocked ? 0.2 : 0.3,
-                  ),
+                  color: _difficultyColor(song.difficulty),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
