@@ -107,40 +107,39 @@ class GameController extends GetxController
       return;
     }
 
-    // Fin de la canción
-    if (idx == notes.length - _paddingNotes - 1) {
-      if (isInfiniteMode.value) {
-        _startNextLoop();
-      } else {
-        _handleSongCompleted();
-      }
+    // Fin de la canción (solo en modo normal)
+    if (!isInfiniteMode.value && idx == notes.length - _paddingNotes - 1) {
+      _handleSongCompleted();
       return;
     }
 
-    // Nota normal: avanzar
+    // Avanzar a la siguiente nota
     currentNoteIndex.value++;
+
+    // Modo infinito: pre-cargar el siguiente loop 4 notas antes de llegar al
+    // padding, de modo que los tiles entrantes sean visibles sin corte visual.
+    if (isInfiniteMode.value) {
+      final realEnd = notes.length - _paddingNotes;
+      if (realEnd - currentNoteIndex.value == _paddingNotes) {
+        loopCount.value++;
+        _applyLoopSpeed();
+        _appendMoreNotes();
+      }
+    }
+
     animationController.forward(from: 0);
   }
 
   // ── Infinite mode ──────────────────────────────────────────────────────
 
-  /// Activa el modo infinito desde el diálogo de canción completada y arranca
-  /// la animación inmediatamente (el jugador ya demostró intención).
   void enterInfiniteMode() {
     isInfiniteMode.value = true;
     loopCount.value = 1;
     _applyLoopSpeed();
     _appendMoreNotes();
     currentNoteIndex.value++;
-    animationController.forward(from: 0);
-  }
-
-  void _startNextLoop() {
-    loopCount.value++;
-    _applyLoopSpeed();
-    _appendMoreNotes();
-    currentNoteIndex.value++;
-    animationController.forward(from: 0);
+    hasStarted.value = false;
+    animationController.reset();
   }
 
   void _applyLoopSpeed() {
@@ -158,14 +157,15 @@ class GameController extends GetxController
         .sublist(0, _baseNotes.length - _paddingNotes)
         .map((n) => Note(currentLength + n.orderNumber, n.line))
         .toList();
-
-    notes.removeRange(notes.length - _paddingNotes, notes.length);
-    notes.addAll(newNotes);
-    notes.addAll(List.generate(
+    final padding = List.generate(
       _paddingNotes,
-      (i) => Note(notes.length + i, -1),
-    ));
-    notes.refresh();
+      (i) => Note(currentLength + newNotes.length + i, -1),
+    );
+    notes.value = [
+      ...notes.sublist(0, currentLength),
+      ...newNotes,
+      ...padding,
+    ];
   }
 
   // ── Tap ────────────────────────────────────────────────────────────────

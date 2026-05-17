@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter build *)",
+      "Bash(flutter --version)",
+      "Bash(del \"c:\\\\Users\\\\Administrador\\\\3D Objects\\\\OurPianoTiles\\\\android\\\\app\\\\src\\\\main\\\\java\\\\io\\\\flutter\\\\plugins\\\\GeneratedPluginRegistrant.java\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Administrador\\\\3D Objects\\\\OurPianoTiles\" -Recurse -Directory)"
+    ]
+  }
+}

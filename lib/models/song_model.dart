@@ -33,7 +33,6 @@ final List<SongModel> availableSongs = [
     artist: 'Piano Tiles',
     difficulty: 'Medio',
     notesProvider: initNotes,
-    isLocked: true,
   ),
   SongModel(
     id: 'song_3',
@@ -41,6 +40,5 @@ final List<SongModel> availableSongs = [
     artist: 'Piano Tiles',
     difficulty: 'Difícil',
     notesProvider: initNotes,
-    isLocked: true,
   ),
 ];
