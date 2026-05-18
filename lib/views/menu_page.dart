@@ -70,7 +70,7 @@ class MenuPage extends GetView<SongMenuController> {
                     children: [
                       // Page header
                       const Text(
-                        'Piano Tiles',
+                        'Music Tiles',
                         style: TextStyle(
                           fontFamily: 'Montserrat',
                           fontSize: 36,
@@ -464,14 +464,6 @@ class _FeaturedCard extends StatelessWidget {
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
-                    ),
-                  ),
-                  Text(
-                    'Pack de 5 nuevas pistas',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: _onSurfaceVariant,
                     ),
                   ),
                 ],

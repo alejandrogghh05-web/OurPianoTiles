@@ -9,8 +9,12 @@ import 'package:piano_tiles/services/record_service.dart';
 class GameController extends GetxController
     with GetSingleTickerProviderStateMixin {
   late final SongModel song;
-  late final AudioPlayer player;
   late AnimationController animationController;
+
+  // Pool de AudioPlayers para soportar notas simultáneas sin cortes
+  static const int _poolSize = 8;
+  late final List<AudioPlayer> _playerPool;
+  int _poolIndex = 0;
 
   final notes = <Note>[].obs;
   final currentNoteIndex = 0.obs;
@@ -35,15 +39,15 @@ class GameController extends GetxController
   @override
   void onInit() {
     super.onInit();
+
+    // Inicializar pool de audio
+    _playerPool = List.generate(_poolSize, (_) => AudioPlayer());
+
     final args = Get.arguments;
 
-    // Soporte para lanzar directamente en modo infinito desde el menú.
-    // Se puede pasar un Map con 'song' e 'infiniteMode': true,
-    // o simplemente un SongModel (modo normal).
     if (args is Map) {
       song = args['song'] as SongModel;
       final startInfinite = args['infiniteMode'] == true;
-      player = AudioPlayer();
       _baseNotes = song.notesProvider();
       notes.value = List.from(_baseNotes);
       _loadRecords();
@@ -55,8 +59,6 @@ class GameController extends GetxController
       animationController.addStatusListener(_onAnimationStatus);
 
       if (startInfinite) {
-        // Prepara el tablero en modo infinito pero NO arranca la animación;
-        // esperará al primer tap del jugador (hasStarted = false).
         isInfiniteMode.value = true;
         loopCount.value = 1;
         _applyLoopSpeed();
@@ -64,7 +66,6 @@ class GameController extends GetxController
       }
     } else {
       song = args as SongModel;
-      player = AudioPlayer();
       _baseNotes = song.notesProvider();
       notes.value = List.from(_baseNotes);
       _loadRecords();
@@ -80,7 +81,9 @@ class GameController extends GetxController
   @override
   void onClose() {
     animationController.dispose();
-    player.dispose();
+    for (final p in _playerPool) {
+      p.dispose();
+    }
     super.onClose();
   }
 
@@ -116,8 +119,7 @@ class GameController extends GetxController
     // Avanzar a la siguiente nota
     currentNoteIndex.value++;
 
-    // Modo infinito: pre-cargar el siguiente loop 4 notas antes de llegar al
-    // padding, de modo que los tiles entrantes sean visibles sin corte visual.
+    // Modo infinito: pre-cargar el siguiente loop cuando se acerca el padding
     if (isInfiniteMode.value) {
       final realEnd = notes.length - _paddingNotes;
       if (realEnd - currentNoteIndex.value == _paddingNotes) {
@@ -133,12 +135,20 @@ class GameController extends GetxController
   // ── Infinite mode ──────────────────────────────────────────────────────
 
   void enterInfiniteMode() {
+    // Reiniciar estado completo para modo infinito
     isInfiniteMode.value = true;
+    isPlaying.value = true;
+    hasStarted.value = false;
+    points.value = 0;
     loopCount.value = 1;
+
+    // Reconstruir notas desde cero con velocidad inicial
+    _baseNotes = song.notesProvider();
+    notes.value = List.from(_baseNotes);
     _applyLoopSpeed();
     _appendMoreNotes();
-    currentNoteIndex.value++;
-    hasStarted.value = false;
+
+    currentNoteIndex.value = 0;
     animationController.reset();
   }
 
@@ -192,8 +202,6 @@ class GameController extends GetxController
 
   Future<void> _handleSongCompleted() async {
     isPlaying.value = false;
-    // Marcar la canción como completada para desbloquear el modo infinito
-    // en el menú principal.
     await RecordService.markCompleted(song.id);
     final isNewRecord =
         await RecordService.saveIfRecord(song.id, points.value);
@@ -235,6 +243,9 @@ class GameController extends GetxController
   void _playNote(Note note) {
     const files = ['a.wav', 'c.wav', 'e.wav', 'f.wav'];
     if (note.line >= 0 && note.line < files.length) {
+      // Usar el siguiente player del pool para evitar cortes entre notas rápidas
+      final player = _playerPool[_poolIndex];
+      _poolIndex = (_poolIndex + 1) % _poolSize;
       player.play(AssetSource(files[note.line]));
     }
   }
@@ -347,7 +358,6 @@ class GameController extends GetxController
                     child: ElevatedButton.icon(
                       onPressed: () {
                         Get.back();
-                        isPlaying.value = true;
                         enterInfiniteMode();
                       },
                       icon: const Icon(Icons.all_inclusive, size: 18),
