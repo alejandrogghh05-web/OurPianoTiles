@@ -1,3 +1,4 @@
+// lib/controllers/game_controller.dart
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -11,7 +12,6 @@ class GameController extends GetxController
   late final SongModel song;
   late AnimationController animationController;
 
-  // Pool de AudioPlayers para soportar notas simultáneas sin cortes
   static const int _poolSize = 8;
   late final List<AudioPlayer> _playerPool;
   int _poolIndex = 0;
@@ -32,15 +32,35 @@ class GameController extends GetxController
   late List<Note> _baseNotes;
   static const int _paddingNotes = 4;
 
+  // Tempo dinámico: duración de la nota actual en modo normal
   static const int _baseDurationMs = 300;
   static const double _speedIncreasePerLoop = 0.08;
   static const int _minDurationMs = 80;
+
+  // ── Helpers ────────────────────────────────────────────────────────────
+
+  /// Devuelve el durationMs de la nota activa, o _baseDurationMs como fallback.
+  int _durationForIndex(int idx) {
+    if (idx < notes.length) {
+      final ms = notes[idx].durationMs;
+      return ms > 0 ? ms : _baseDurationMs;
+    }
+    return _baseDurationMs;
+  }
+
+  /// Actualiza la duración del AnimationController y lanza forward().
+  void _forwardWithDuration(int idx) {
+    final ms = isInfiniteMode.value
+        ? currentSpeedMs.value
+        : _durationForIndex(idx);
+    animationController.duration = Duration(milliseconds: ms);
+    animationController.forward(from: 0);
+  }
 
   @override
   void onInit() {
     super.onInit();
 
-    // Inicializar pool de audio
     _playerPool = List.generate(_poolSize, (_) => AudioPlayer());
 
     final args = Get.arguments;
@@ -129,20 +149,19 @@ class GameController extends GetxController
       }
     }
 
-    animationController.forward(from: 0);
+    // Lanzar la siguiente animación con la duración correcta
+    _forwardWithDuration(currentNoteIndex.value);
   }
 
   // ── Infinite mode ──────────────────────────────────────────────────────
 
   void enterInfiniteMode() {
-    // Reiniciar estado completo para modo infinito
     isInfiniteMode.value = true;
     isPlaying.value = true;
     hasStarted.value = false;
     points.value = 0;
     loopCount.value = 1;
 
-    // Reconstruir notas desde cero con velocidad inicial
     _baseNotes = song.notesProvider();
     notes.value = List.from(_baseNotes);
     _applyLoopSpeed();
@@ -165,7 +184,12 @@ class GameController extends GetxController
     final currentLength = notes.length - _paddingNotes;
     final newNotes = _baseNotes
         .sublist(0, _baseNotes.length - _paddingNotes)
-        .map((n) => Note(currentLength + n.orderNumber, n.line, pitch: n.pitch))
+        .map((n) => Note(
+              currentLength + n.orderNumber,
+              n.line,
+              pitch: n.pitch,
+              durationMs: n.durationMs,
+            ))
         .toList();
     final padding = List.generate(
       _paddingNotes,
@@ -189,7 +213,8 @@ class GameController extends GetxController
 
     if (!hasStarted.value) {
       hasStarted.value = true;
-      animationController.forward();
+      // Primera nota: usar su durationMs propio
+      _forwardWithDuration(note.orderNumber);
     }
 
     _playNote(note);
@@ -245,15 +270,12 @@ class GameController extends GetxController
 
     final String assetFile;
     if (note.pitch >= 0) {
-      // Usar el pitch musical real asignado a la nota
       assetFile = pitchToAsset(note.pitch);
     } else {
-      // Fallback: mapeo original por columna (para compatibilidad)
       const fallback = ['a.wav', 'c.wav', 'e.wav', 'f.wav'];
       assetFile = fallback[note.line % 4];
     }
 
-    // Usar el siguiente player del pool para evitar cortes entre notas rápidas
     final player = _playerPool[_poolIndex];
     _poolIndex = (_poolIndex + 1) % _poolSize;
     player.play(AssetSource(assetFile));
