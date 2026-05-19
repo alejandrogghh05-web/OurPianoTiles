@@ -165,7 +165,7 @@ class GameController extends GetxController
     final currentLength = notes.length - _paddingNotes;
     final newNotes = _baseNotes
         .sublist(0, _baseNotes.length - _paddingNotes)
-        .map((n) => Note(currentLength + n.orderNumber, n.line))
+        .map((n) => Note(currentLength + n.orderNumber, n.line, pitch: n.pitch))
         .toList();
     final padding = List.generate(
       _paddingNotes,
@@ -241,13 +241,22 @@ class GameController extends GetxController
   // ── Audio ──────────────────────────────────────────────────────────────
 
   void _playNote(Note note) {
-    const files = ['a.wav', 'c.wav', 'e.wav', 'f.wav'];
-    if (note.line >= 0 && note.line < files.length) {
-      // Usar el siguiente player del pool para evitar cortes entre notas rápidas
-      final player = _playerPool[_poolIndex];
-      _poolIndex = (_poolIndex + 1) % _poolSize;
-      player.play(AssetSource(files[note.line]));
+    if (note.line < 0) return;
+
+    final String assetFile;
+    if (note.pitch >= 0) {
+      // Usar el pitch musical real asignado a la nota
+      assetFile = pitchToAsset(note.pitch);
+    } else {
+      // Fallback: mapeo original por columna (para compatibilidad)
+      const fallback = ['a.wav', 'c.wav', 'e.wav', 'f.wav'];
+      assetFile = fallback[note.line % 4];
     }
+
+    // Usar el siguiente player del pool para evitar cortes entre notas rápidas
+    final player = _playerPool[_poolIndex];
+    _poolIndex = (_poolIndex + 1) % _poolSize;
+    player.play(AssetSource(assetFile));
   }
 
   // ── Dialogs ────────────────────────────────────────────────────────────

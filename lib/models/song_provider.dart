@@ -1,77 +1,130 @@
 import 'package:piano_tiles/models/note.dart';
 
-// ── Melodía 1 – Fácil ─────────────────────────────────────────────────────────
-// Patrón suave y predecible, movimientos graduales (La menor simple)
+// ══════════════════════════════════════════════════════════════════════════════
+// Melodía 1 – Fácil: "Ode to Joy" (Beethoven) en Do mayor, octava 4-5
+// 4 columnas visuales, cada nota tiene un pitch musical real.
+// columna 0 → voz más grave del acorde
+// columna 1 → segunda voz
+// columna 2 → tercera voz
+// columna 3 → voz más aguda
+// ══════════════════════════════════════════════════════════════════════════════
 List<Note> initNotes() {
-  return [
-    Note(0, 0),  Note(1, 1),  Note(2, 2),  Note(3, 1),
-    Note(4, 3),  Note(5, 0),  Note(6, 1),  Note(7, 2),
-    Note(8, 3),  Note(9, 2),  Note(10, 3), Note(11, 0),
-    Note(12, 2), Note(13, 1), Note(14, 3), Note(15, 0),
-    Note(16, 1), Note(17, 2), Note(18, 3), Note(19, 2),
-    Note(20, 3), Note(21, 1), Note(22, 2), Note(23, 1),
-    Note(24, 3), Note(25, 0), Note(26, 1), Note(27, 2),
-    Note(28, 3), Note(29, 2), Note(30, 3), Note(31, 1),
-    Note(32, 2), Note(33, 1), Note(34, 3), Note(35, 0),
-    Note(36, 1), Note(37, 2), Note(38, 3), Note(39, 2),
-    Note(40, 3),
-    Note(41, -1), Note(42, -1), Note(43, -1), Note(44, -1),
+  // Himno a la Alegría – fragmento principal (E4-E4-F4-G4-G4-F4-E4-D4-C4-C4-D4-E4-E4-D4-D4)
+  const melody = [
+    // line, pitch
+    [2, E4], [2, E4], [3, F4], [3, G4],
+    [3, G4], [3, F4], [2, E4], [1, D4],
+    [0, C4], [0, C4], [1, D4], [2, E4],
+    [2, E4], [1, D4], [1, D4],
+    // Segunda frase
+    [2, E4], [2, E4], [3, F4], [3, G4],
+    [3, G4], [3, F4], [2, E4], [1, D4],
+    [0, C4], [0, C4], [1, D4], [2, E4],
+    [1, D4], [0, C4], [0, C4],
+    // Puente
+    [1, D4], [1, D4], [2, E4], [0, C4],
+    [1, D4], [2, E4], [3, F4], [2, E4], [0, C4],
+    [1, D4], [2, E4], [3, F4], [2, E4], [1, D4],
+    // Coda
+    [0, C4], [1, D4], [0, G3],
   ];
+
+  final notes = <Note>[];
+  for (int i = 0; i < melody.length; i++) {
+    notes.add(Note(i, melody[i][0] as int, pitch: melody[i][1] as int));
+  }
+  // Padding de silencio
+  final end = notes.length;
+  for (int i = 0; i < 4; i++) {
+    notes.add(Note(end + i, -1));
+  }
+  return notes;
 }
 
-// ── Melodía 2 – Medio ─────────────────────────────────────────────────────────
-// Inspirada en "Für Elise" (fragmento simplificado a 4 columnas).
-// Más saltos entre columnas extremas, ritmo irregular.
+// ══════════════════════════════════════════════════════════════════════════════
+// Melodía 2 – Medio: "Für Elise" (Beethoven) – fragmento A+B
+// Tonalidad La menor. Usa octavas 4 y 5 para más rango.
+// ══════════════════════════════════════════════════════════════════════════════
 List<Note> initNotesMedium() {
-  return [
-    // Frase A: mi-re#-mi-re#-mi-si-re-do (columnas: 2-1-2-1-2-3-0-3)
-    Note(0, 2),  Note(1, 1),  Note(2, 2),  Note(3, 1),
-    Note(4, 2),  Note(5, 3),  Note(6, 0),  Note(7, 3),
-    // Frase B: la-do-mi (columnas: 0-3-2)
-    Note(8, 0),  Note(9, 3),  Note(10, 2),
-    // Repetición variada A
-    Note(11, 2), Note(12, 1), Note(13, 2), Note(14, 1),
-    Note(15, 2), Note(16, 3), Note(17, 0), Note(18, 3),
-    // Frase C: saltos amplios
-    Note(19, 0), Note(20, 3), Note(21, 1), Note(22, 3),
-    Note(23, 0), Note(24, 2), Note(25, 3), Note(26, 1),
-    // Frase D: descenso escalonado
-    Note(27, 3), Note(28, 2), Note(29, 1), Note(30, 0),
-    Note(31, 1), Note(32, 2), Note(33, 3), Note(34, 2),
-    // Cierre
-    Note(35, 1), Note(36, 0), Note(37, 1), Note(38, 2),
-    Note(39, 3), Note(40, 2), Note(41, 0),
-    Note(42, -1), Note(43, -1), Note(44, -1), Note(45, -1),
+  const melody = [
+    // Tema A: E5-Ds5-E5-Ds5-E5-B4-D5-C5
+    [2, E5], [1, Ds5], [2, E5], [1, Ds5],
+    [2, E5], [0, B4],  [1, D5], [0, C5],
+    // A4-C4-E4-A4 (acorde Am)
+    [0, A4], [1, C5], [2, E5],
+    // Tema A repetido variado
+    [2, E5], [1, Ds5], [2, E5], [1, Ds5],
+    [2, E5], [0, B4],  [1, D5], [0, C5],
+    // A3-E4-Gs4-B4 (acorde E)
+    [0, A3], [1, E4], [2, Gs4], [3, B4],
+    // Tema A de nuevo
+    [2, E5], [1, Ds5], [2, E5], [1, Ds5],
+    [2, E5], [0, B4],  [1, D5], [0, C5],
+    // Tema B: A4-B4-C5-D5-E5-F5
+    [0, A4], [0, B4], [1, C5], [1, D5],
+    [2, E5], [3, F5],
+    // Descenso: E5-D5-C5-B4-A4
+    [3, E5], [2, D5], [1, C5], [0, B4], [0, A4],
+    // Cadencia final
+    [1, E4], [2, A4], [3, E5], [2, C5], [1, A4],
+    [0, E4], [0, A3],
   ];
+
+  final notes = <Note>[];
+  for (int i = 0; i < melody.length; i++) {
+    notes.add(Note(i, melody[i][0] as int, pitch: melody[i][1] as int));
+  }
+  final end = notes.length;
+  for (int i = 0; i < 4; i++) {
+    notes.add(Note(end + i, -1));
+  }
+  return notes;
 }
 
-// ── Melodía 3 – Difícil ───────────────────────────────────────────────────────
-// Inspirada en "Ode to Joy" con saltos rápidos y patrones cruzados.
-// Muchos cambios de extremo a extremo para máxima dificultad.
+// ══════════════════════════════════════════════════════════════════════════════
+// Melodía 3 – Difícil: "Moonlight Sonata" Op.27 No.2 (Beethoven) – 1er mov.
+// Arpegios en triples con saltos amplios entre octavas 3, 4 y 5.
+// Máxima dificultad: saltos frecuentes entre columnas extremas.
+// ══════════════════════════════════════════════════════════════════════════════
 List<Note> initNotesHard() {
-  return [
-    // Frase A: mi-mi-fa-sol (col 2-2-3-3)
-    Note(0, 2),  Note(1, 2),  Note(2, 3),  Note(3, 3),
-    // sol-fa-mi-re (col 3-3-2-1)
-    Note(4, 3),  Note(5, 3),  Note(6, 2),  Note(7, 1),
-    // do-do-re-mi (col 0-0-1-2)
-    Note(8, 0),  Note(9, 0),  Note(10, 1), Note(11, 2),
-    // mi-re-re (col 2-1-1)
-    Note(12, 2), Note(13, 1), Note(14, 1),
-    // Frase B con saltos amplios
-    Note(15, 2), Note(16, 2), Note(17, 3), Note(18, 3),
-    Note(19, 3), Note(20, 3), Note(21, 2), Note(22, 1),
-    Note(23, 0), Note(24, 2), Note(25, 1), Note(26, 0),
-    Note(27, 1), Note(28, 0), Note(29, 0),
-    // Puente: saltos cruzados extremos
-    Note(30, 0), Note(31, 3), Note(32, 0), Note(33, 3),
-    Note(34, 1), Note(35, 2), Note(36, 0), Note(37, 3),
-    Note(38, 2), Note(39, 1), Note(40, 3), Note(41, 0),
-    // Repetición acelerada frase A
-    Note(42, 2), Note(43, 2), Note(44, 3), Note(45, 3),
-    Note(46, 3), Note(47, 2), Note(48, 1), Note(49, 0),
-    Note(50, 1), Note(51, 2), Note(52, 3), Note(53, 2),
-    Note(54, 1), Note(55, 0),
-    Note(56, -1), Note(57, -1), Note(58, -1), Note(59, -1),
+  const melody = [
+    // Compás 1: Gs3-Cs4-E4 (arpegio Cs menor)
+    [0, Gs3], [1, Cs4], [2, E4],
+    [0, Gs3], [1, Cs4], [2, E4],
+    // Compás 2: Gs3-Ds4-Fs4 (Gs mayor)
+    [0, Gs3], [1, Ds4], [3, Fs4],
+    [0, Gs3], [1, Ds4], [3, Fs4],
+    // Compás 3: A3-Cs4-E4 (La mayor)
+    [0, A3],  [1, Cs4], [2, E4],
+    [0, A3],  [1, Cs4], [2, E4],
+    // Compás 4: E3-B3-E4 (Mi mayor)
+    [0, E3],  [1, B3],  [2, E4],
+    [0, E3],  [1, B3],  [2, E4],
+    // Sección B: melodía superior
+    [3, Cs5], [2, B4],  [3, Cs5], [2, A4],
+    [1, Gs4], [0, Fs4], [1, Gs4], [0, E4],
+    // Arpegios descendentes rápidos
+    [3, E5],  [2, Cs5], [1, A4],  [0, Gs3],
+    [3, Ds5], [2, B4],  [1, Gs4], [0, Fs3],
+    // Escalas con saltos
+    [0, Cs4], [1, Ds4], [2, E4],  [3, Fs4],
+    [3, Gs4], [2, A4],  [1, B4],  [0, Cs5],
+    // Clímax: octava alta
+    [3, E5],  [3, Ds5], [3, E5],  [3, Ds5],
+    [3, E5],  [2, B4],  [1, D5],  [0, C5],
+    // Resolución final
+    [0, A3],  [1, E4],  [2, A4],  [3, Cs5],
+    [2, A4],  [1, E4],  [0, A3],  [0, E3],
+    [0, A2],
   ];
+
+  final notes = <Note>[];
+  for (int i = 0; i < melody.length; i++) {
+    notes.add(Note(i, melody[i][0] as int, pitch: melody[i][1] as int));
+  }
+  final end = notes.length;
+  for (int i = 0; i < 4; i++) {
+    notes.add(Note(end + i, -1));
+  }
+  return notes;
 }
