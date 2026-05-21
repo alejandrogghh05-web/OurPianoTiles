@@ -12,7 +12,7 @@ class GameController extends GetxController
   late final SongModel song;
   late AnimationController animationController;
 
-  static const int _poolSize = 8;
+  static const int _poolSize = 12;
   late final List<AudioPlayer> _playerPool;
   int _poolIndex = 0;
 
@@ -61,7 +61,12 @@ class GameController extends GetxController
   void onInit() {
     super.onInit();
 
-    _playerPool = List.generate(_poolSize, (_) => AudioPlayer());
+    _playerPool = List.generate(_poolSize, (_) {
+      final p = AudioPlayer();
+      p.setReleaseMode(ReleaseMode.stop);
+      return p;
+    });
+    AudioCache.instance.loadAll(_allAudioAssets());
 
     final args = Get.arguments;
 
@@ -274,6 +279,16 @@ class GameController extends GetxController
 
   // ── Audio ──────────────────────────────────────────────────────────────
 
+  static List<String> _allAudioAssets() {
+    const noteNames = ['C','Cs','D','Ds','E','F','Fs','G','Gs','A','As','B'];
+    final assets = <String>['a.wav', 'c.wav', 'e.wav', 'f.wav'];
+    for (int oct = 2; oct <= 7; oct++) {
+      for (final n in noteNames) assets.add('$n$oct.wav');
+    }
+    assets.add('C8.wav');
+    return assets;
+  }
+
   void _playNote(Note note) {
     if (note.line < 0) return;
 
@@ -287,6 +302,7 @@ class GameController extends GetxController
 
     final player = _playerPool[_poolIndex];
     _poolIndex = (_poolIndex + 1) % _poolSize;
+    player.stop();
     player.play(AssetSource(assetFile));
   }
 
