@@ -249,6 +249,8 @@ class GameController extends GetxController
   // ── Restart ────────────────────────────────────────────────────────────
 
   void restart() {
+    final wasInfinite = isInfiniteMode.value;
+    for (final p in _playerPool) p.stop();
     isInfiniteMode.value = false;
     hasStarted.value = false;
     isPlaying.value = true;
@@ -261,6 +263,13 @@ class GameController extends GetxController
     animationController.duration =
         const Duration(milliseconds: _baseDurationMs);
     animationController.reset();
+
+    if (wasInfinite) {
+      isInfiniteMode.value = true;
+      loopCount.value = 1;
+      _applyLoopSpeed();
+      _appendMoreNotes();
+    }
   }
 
   // ── Audio ──────────────────────────────────────────────────────────────
