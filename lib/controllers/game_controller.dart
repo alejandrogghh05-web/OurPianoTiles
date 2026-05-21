@@ -9,7 +9,7 @@ import 'package:piano_tiles/services/record_service.dart';
 class GameController extends GetxController
     with GetSingleTickerProviderStateMixin {
   late final SongModel song;
-  late final AudioPlayer player;
+  late final List<AudioPlayer> _players;
   late AnimationController animationController;
 
   final notes = <Note>[].obs;
@@ -43,7 +43,7 @@ class GameController extends GetxController
     if (args is Map) {
       song = args['song'] as SongModel;
       final startInfinite = args['infiniteMode'] == true;
-      player = AudioPlayer();
+      _players = List.generate(4, (_) => AudioPlayer());
       _baseNotes = song.notesProvider();
       notes.value = List.from(_baseNotes);
       _loadRecords();
@@ -64,7 +64,7 @@ class GameController extends GetxController
       }
     } else {
       song = args as SongModel;
-      player = AudioPlayer();
+      _players = List.generate(4, (_) => AudioPlayer());
       _baseNotes = song.notesProvider();
       notes.value = List.from(_baseNotes);
       _loadRecords();
@@ -80,7 +80,7 @@ class GameController extends GetxController
   @override
   void onClose() {
     animationController.dispose();
-    player.dispose();
+    for (final p in _players) p.dispose();
     super.onClose();
   }
 
@@ -216,6 +216,7 @@ class GameController extends GetxController
   // ── Restart ────────────────────────────────────────────────────────────
 
   void restart() {
+    final wasInfinite = isInfiniteMode.value;
     isInfiniteMode.value = false;
     hasStarted.value = false;
     isPlaying.value = true;
@@ -228,6 +229,13 @@ class GameController extends GetxController
     animationController.duration =
         const Duration(milliseconds: _baseDurationMs);
     animationController.reset();
+
+    if (wasInfinite) {
+      isInfiniteMode.value = true;
+      loopCount.value = 1;
+      _applyLoopSpeed();
+      _appendMoreNotes();
+    }
   }
 
   // ── Audio ──────────────────────────────────────────────────────────────
@@ -235,7 +243,8 @@ class GameController extends GetxController
   void _playNote(Note note) {
     const files = ['a.wav', 'c.wav', 'e.wav', 'f.wav'];
     if (note.line >= 0 && note.line < files.length) {
-      player.play(AssetSource(files[note.line]));
+      _players[note.line].stop();
+      _players[note.line].play(AssetSource(files[note.line]));
     }
   }
 
