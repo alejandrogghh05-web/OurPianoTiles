@@ -1,5 +1,4 @@
 // lib/controllers/game_controller.dart
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:piano_tiles/models/song_model.dart';
@@ -12,17 +11,13 @@ class GameController extends GetxController
   late final SongModel song;
   late AnimationController animationController;
 
-  static final _soundPlayers = <String, List<AudioPlayer>>{};
-  static final _soundPlayerIdx = <String, int>{};
-  static AudioPlayer? _lastPlayedPlayer;
-
   final notes = <Note>[].obs;
   final currentNoteIndex = 0.obs;
   final points = 0.obs;
   final hasStarted = false.obs;
   final isPlaying = true.obs;
   final isInfiniteMode = false.obs;
-  final record = 0.obs;
+final record = 0.obs;
   final infiniteRecord = 0.obs;
 
   // Infinite mode state
@@ -69,7 +64,6 @@ class GameController extends GetxController
       _baseNotes = song.notesProvider();
       notes.value = List.from(_baseNotes);
       _loadRecords();
-      _initAudio();
 
       animationController = AnimationController(
         vsync: this,
@@ -88,7 +82,6 @@ class GameController extends GetxController
       _baseNotes = song.notesProvider();
       notes.value = List.from(_baseNotes);
       _loadRecords();
-      _initAudio();
 
       animationController = AnimationController(
         vsync: this,
@@ -101,11 +94,6 @@ class GameController extends GetxController
   @override
   void onClose() {
     animationController.dispose();
-    // Los players son estáticos — sólo detenerlos, no destruirlos,
-    // para evitar la condición de carrera al reiniciar el juego.
-    for (final players in _soundPlayers.values) {
-      for (final p in players) p.stop();
-    }
     super.onClose();
   }
 
@@ -207,19 +195,20 @@ class GameController extends GetxController
   // ── Tap ────────────────────────────────────────────────────────────────
 
   void onTap(Note note) {
-    final allPreviousTapped = notes
-        .sublist(0, note.orderNumber)
-        .every((n) => n.state == NoteState.tapped);
+    if (!isPlaying.value) return;
+    if (note.state == NoteState.tapped) return;
+    if (note.orderNumber < currentNoteIndex.value) return;
 
+    final allPreviousTapped = notes
+        .sublist(currentNoteIndex.value, note.orderNumber)
+        .every((n) => n.state == NoteState.tapped);
     if (!allPreviousTapped) return;
 
     if (!hasStarted.value) {
       hasStarted.value = true;
-      // Primera nota: usar su durationMs propio
       _forwardWithDuration(note.orderNumber);
     }
 
-    _playNote(note);
     note.state = NoteState.tapped;
     notes.refresh();
     points.value++;
@@ -252,13 +241,6 @@ class GameController extends GetxController
 
   void restart() {
     final wasInfinite = isInfiniteMode.value;
-    for (final players in _soundPlayers.values) {
-      for (final p in players) p.stop();
-    }
-    _lastPlayedPlayer = null;
-    for (final key in _soundPlayerIdx.keys) {
-      _soundPlayerIdx[key] = 0;
-    }
     isInfiniteMode.value = false;
     hasStarted.value = false;
     isPlaying.value = true;
@@ -280,74 +262,6 @@ class GameController extends GetxController
     }
   }
 
-  // ── Audio ──────────────────────────────────────────────────────────────
-
-  Set<String> _uniqueAssetsForNotes(List<Note> notes) {
-    const fallback = ['a.wav', 'c.wav', 'e.wav', 'f.wav'];
-    return {
-      for (final n in notes)
-        if (n.line >= 0)
-          n.pitch >= 0 ? pitchToAsset(n.pitch) : fallback[n.line % 4],
-    };
-  }
-
-  static final _noFocusCtx = AudioContext(
-    android: const AudioContextAndroid(
-      audioFocus: AndroidAudioFocus.none,
-      contentType: AndroidContentType.sonification,
-      usageType: AndroidUsageType.game,
-    ),
-  );
-
-  Future<void> _initAudio() async {
-    final assets = _uniqueAssetsForNotes(_baseNotes);
-    // Solo cargar los assets que todavía no están en el mapa (nueva canción).
-    final missing = assets.where((a) => !_soundPlayers.containsKey(a)).toSet();
-    if (missing.isEmpty) return;
-
-    if (_soundPlayers.isEmpty) {
-      await AudioPlayer.global.setAudioContext(_noFocusCtx);
-      debugPrint('[AUDIO_INIT] Global context aplicado (audioFocus=none)');
-    }
-
-    debugPrint('[AUDIO_INIT] Cargando ${missing.length} assets nuevos...');
-    for (final assetFile in missing) {
-      final players = await Future.wait(List.generate(2, (_) async {
-        final p = AudioPlayer();
-        await p.setPlayerMode(PlayerMode.lowLatency);
-        await p.setReleaseMode(ReleaseMode.stop);
-        await p.setSource(AssetSource(assetFile));
-        return p;
-      }));
-      _soundPlayers[assetFile] = players;
-      _soundPlayerIdx[assetFile] = 0;
-      debugPrint('[AUDIO_INIT] $assetFile listo');
-    }
-    debugPrint('[AUDIO_INIT] Init completo (${_soundPlayers.length} assets totales)');
-  }
-
-  void _playNote(Note note) {
-    if (note.line < 0) return;
-
-    const fallback = ['a.wav', 'c.wav', 'e.wav', 'f.wav'];
-    final assetFile = note.pitch >= 0
-        ? pitchToAsset(note.pitch)
-        : fallback[note.line % 4];
-
-    final players = _soundPlayers[assetFile];
-    if (players == null) return;
-
-    final idx = _soundPlayerIdx[assetFile]!;
-    _soundPlayerIdx[assetFile] = (idx + 1) % 2;
-
-    final p = players[idx];
-    // Cortar nota anterior + reiniciar actual: stop luego resume se
-    // procesan en orden en Android, no hace falta await.
-    if (_lastPlayedPlayer != p) _lastPlayedPlayer?.stop();
-    _lastPlayedPlayer = p;
-    p.stop();
-    p.resume();
-  }
 
   // ── Dialogs ────────────────────────────────────────────────────────────
 

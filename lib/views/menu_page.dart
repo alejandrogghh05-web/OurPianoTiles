@@ -70,7 +70,7 @@ class MenuPage extends GetView<SongMenuController> {
                     children: [
                       // Page header
                       const Text(
-                        'Music Tiles',
+                        'Reflex Rush',
                         style: TextStyle(
                           fontFamily: 'Montserrat',
                           fontSize: 36,
@@ -86,7 +86,7 @@ class MenuPage extends GetView<SongMenuController> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Elige una canción',
+                        'Elige un desafío',
                         style: TextStyle(
                           fontSize: 13,
                           letterSpacing: 0.05 * 13,
@@ -146,7 +146,7 @@ class _TopBar extends StatelessWidget {
               const SizedBox(width: 12),
               const Expanded(
                 child: Text(
-                  'Rhythm Echo',
+                  'Reflex Rush',
                   style: TextStyle(
                     fontFamily: 'Montserrat',
                     fontSize: 22,
@@ -448,7 +448,7 @@ class _FeaturedCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: const Text(
-                      'Novedad',
+                      'Próximamente',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
@@ -458,7 +458,7 @@ class _FeaturedCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    'Classic Echoes',
+                    'Modo Extremo',
                     style: TextStyle(
                       fontFamily: 'Montserrat',
                       fontSize: 20,

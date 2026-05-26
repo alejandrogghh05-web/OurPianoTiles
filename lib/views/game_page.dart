@@ -50,6 +50,8 @@ class GamePage extends GetView<GameController> {
               ),
             ),
           ),
+
+
         ],
       ),
     );

@@ -22,22 +22,22 @@ class SongModel {
 final List<SongModel> availableSongs = [
   SongModel(
     id: 'song_1',
-    title: 'Tutorial',
-    artist: 'Music Tiles',
+    title: 'Calentamiento',
+    artist: 'Reflex Rush',
     difficulty: 'Fácil',
     notesProvider: initNotes,
   ),
   SongModel(
     id: 'song_2',
-    title: 'Für Elise',
-    artist: 'Beethoven',
+    title: 'Pulso',
+    artist: 'Reflex Rush',
     difficulty: 'Medio',
     notesProvider: initNotesMedium,
   ),
   SongModel(
     id: 'song_3',
-    title: 'Ode to Joy',
-    artist: 'Beethoven',
+    title: 'Tormenta',
+    artist: 'Reflex Rush',
     difficulty: 'Difícil',
     notesProvider: initNotesHard,
   ),
