@@ -12,9 +12,9 @@ class GameController extends GetxController
   late final SongModel song;
   late AnimationController animationController;
 
-  static const int _poolSize = 12;
-  late final List<AudioPlayer> _playerPool;
-  int _poolIndex = 0;
+  static final _soundPlayers = <String, List<AudioPlayer>>{};
+  static final _soundPlayerIdx = <String, int>{};
+  static AudioPlayer? _lastPlayedPlayer;
 
   final notes = <Note>[].obs;
   final currentNoteIndex = 0.obs;
@@ -61,13 +61,6 @@ class GameController extends GetxController
   void onInit() {
     super.onInit();
 
-    _playerPool = List.generate(_poolSize, (_) {
-      final p = AudioPlayer();
-      p.setReleaseMode(ReleaseMode.stop);
-      return p;
-    });
-    AudioCache.instance.loadAll(_allAudioAssets());
-
     final args = Get.arguments;
 
     if (args is Map) {
@@ -76,6 +69,7 @@ class GameController extends GetxController
       _baseNotes = song.notesProvider();
       notes.value = List.from(_baseNotes);
       _loadRecords();
+      _initAudio();
 
       animationController = AnimationController(
         vsync: this,
@@ -94,6 +88,7 @@ class GameController extends GetxController
       _baseNotes = song.notesProvider();
       notes.value = List.from(_baseNotes);
       _loadRecords();
+      _initAudio();
 
       animationController = AnimationController(
         vsync: this,
@@ -106,8 +101,10 @@ class GameController extends GetxController
   @override
   void onClose() {
     animationController.dispose();
-    for (final p in _playerPool) {
-      p.dispose();
+    // Los players son estáticos — sólo detenerlos, no destruirlos,
+    // para evitar la condición de carrera al reiniciar el juego.
+    for (final players in _soundPlayers.values) {
+      for (final p in players) p.stop();
     }
     super.onClose();
   }
@@ -255,7 +252,13 @@ class GameController extends GetxController
 
   void restart() {
     final wasInfinite = isInfiniteMode.value;
-    for (final p in _playerPool) p.stop();
+    for (final players in _soundPlayers.values) {
+      for (final p in players) p.stop();
+    }
+    _lastPlayedPlayer = null;
+    for (final key in _soundPlayerIdx.keys) {
+      _soundPlayerIdx[key] = 0;
+    }
     isInfiniteMode.value = false;
     hasStarted.value = false;
     isPlaying.value = true;
@@ -279,31 +282,71 @@ class GameController extends GetxController
 
   // ── Audio ──────────────────────────────────────────────────────────────
 
-  static List<String> _allAudioAssets() {
-    const noteNames = ['C','Cs','D','Ds','E','F','Fs','G','Gs','A','As','B'];
-    final assets = <String>['a.wav', 'c.wav', 'e.wav', 'f.wav'];
-    for (int oct = 2; oct <= 7; oct++) {
-      for (final n in noteNames) assets.add('$n$oct.wav');
+  Set<String> _uniqueAssetsForNotes(List<Note> notes) {
+    const fallback = ['a.wav', 'c.wav', 'e.wav', 'f.wav'];
+    return {
+      for (final n in notes)
+        if (n.line >= 0)
+          n.pitch >= 0 ? pitchToAsset(n.pitch) : fallback[n.line % 4],
+    };
+  }
+
+  static final _noFocusCtx = AudioContext(
+    android: const AudioContextAndroid(
+      audioFocus: AndroidAudioFocus.none,
+      contentType: AndroidContentType.sonification,
+      usageType: AndroidUsageType.game,
+    ),
+  );
+
+  Future<void> _initAudio() async {
+    final assets = _uniqueAssetsForNotes(_baseNotes);
+    // Solo cargar los assets que todavía no están en el mapa (nueva canción).
+    final missing = assets.where((a) => !_soundPlayers.containsKey(a)).toSet();
+    if (missing.isEmpty) return;
+
+    if (_soundPlayers.isEmpty) {
+      await AudioPlayer.global.setAudioContext(_noFocusCtx);
+      debugPrint('[AUDIO_INIT] Global context aplicado (audioFocus=none)');
     }
-    assets.add('C8.wav');
-    return assets;
+
+    debugPrint('[AUDIO_INIT] Cargando ${missing.length} assets nuevos...');
+    for (final assetFile in missing) {
+      final players = await Future.wait(List.generate(2, (_) async {
+        final p = AudioPlayer();
+        await p.setPlayerMode(PlayerMode.lowLatency);
+        await p.setReleaseMode(ReleaseMode.stop);
+        await p.setSource(AssetSource(assetFile));
+        return p;
+      }));
+      _soundPlayers[assetFile] = players;
+      _soundPlayerIdx[assetFile] = 0;
+      debugPrint('[AUDIO_INIT] $assetFile listo');
+    }
+    debugPrint('[AUDIO_INIT] Init completo (${_soundPlayers.length} assets totales)');
   }
 
   void _playNote(Note note) {
     if (note.line < 0) return;
 
-    final String assetFile;
-    if (note.pitch >= 0) {
-      assetFile = pitchToAsset(note.pitch);
-    } else {
-      const fallback = ['a.wav', 'c.wav', 'e.wav', 'f.wav'];
-      assetFile = fallback[note.line % 4];
-    }
+    const fallback = ['a.wav', 'c.wav', 'e.wav', 'f.wav'];
+    final assetFile = note.pitch >= 0
+        ? pitchToAsset(note.pitch)
+        : fallback[note.line % 4];
 
-    final player = _playerPool[_poolIndex];
-    _poolIndex = (_poolIndex + 1) % _poolSize;
-    player.stop();
-    player.play(AssetSource(assetFile));
+    final players = _soundPlayers[assetFile];
+    if (players == null) return;
+
+    final idx = _soundPlayerIdx[assetFile]!;
+    _soundPlayerIdx[assetFile] = (idx + 1) % 2;
+
+    final p = players[idx];
+    // Cortar nota anterior + reiniciar actual: stop luego resume se
+    // procesan en orden en Android, no hace falta await.
+    if (_lastPlayedPlayer != p) _lastPlayedPlayer?.stop();
+    _lastPlayedPlayer = p;
+    p.stop();
+    p.resume();
   }
 
   // ── Dialogs ────────────────────────────────────────────────────────────
